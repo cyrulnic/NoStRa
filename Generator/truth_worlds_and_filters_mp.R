@@ -224,11 +224,11 @@ ExtClim   = -HBF_SelfClim    # +-1; B_clim is taken from a KF run: short (-1) or
 #------------------------------------------------------
 # Derived-type variables containing external parameters
 # 
-# NB: U_i      is the same for all tertiary fields and the unperturbed model.
-#     V_char_i is the same for all tertiary fields and the unperturbed model.
+# NB: U_i      is the same for all tertiary==pre-secondary fields and the unperturbed model.
+#     V_char_i is the same for all tertiary==pre-secondary fields and the unperturbed model.
 #     
 # 1) Tertiary fields.
-# Each tertiary field theta_i (i=1,2,3,4) is characterized by the four External Parameters:
+# Each tertiary==pre-secondary field theta_i (i=1,2,3,4) is characterized by the four External Parameters:
 # (U_i, L_i, V_char_i, SD_i),
 # which are to be converted to the four Model Parameters:
 #  (U_i, rho_i, nu_i, sigma_i)
