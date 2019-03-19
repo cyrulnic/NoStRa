@@ -1,11 +1,11 @@
 # Run DSADM, Lorenz-2005, Lorenz-2005-TLM, and 
 # filters: KF, EKF, EnKF, Var, EnVar, HBEF, and  
-# HBF, which includes all the above filters as special cases.
+# HHBEF -- which includes all the above filters as special cases.
 # Write output files to be examined by other programs.
 # 
 # A Rakitko
 # M Tsyrulnikov (current code owner)
-# 17 Jul 2018
+# Mar 2019
 
 library(plot3D)
 library(limSolve)
@@ -17,7 +17,7 @@ source('dsadm_step.R')
 source('dsadm_generator.R')
 source('predictSpatialFldCVM.R')
 source('kf_ekf.R')
-source('hbf.R')
+source('HHBEF.R')
 source('lclz_matrix.R')
 source('symm_pd_mx_sqrt.R')
 source("gfunction.R")
@@ -28,6 +28,7 @@ source('lorenz05_step.R')
 source('lorenz05lin.R')
 source('lorenz05lin_step.R')
 source('ApplyJacobian_fd.R')
+source('SpaSmooCVM.R')
 
 
 path = './Out'
@@ -48,6 +49,7 @@ config <- read.table('./config.txt', sep = ';')
 
 mode            = config[config$V1 == "mode", 2]
 n               = config[config$V1 == "n", 2]
+seed            = config[config$V1 == "seed", 2]
 stride          = config[config$V1 == "stride", 2]   # model time steps in one asml cycle
 time_filter     = config[config$V1 == "time_filter", 2] # nu of filter time steps (analyses)
 dt_h            = config[config$V1 == "dt_h", 2]
@@ -62,23 +64,23 @@ pi_rho          = config[config$V1 == "pi_rho", 2]
 kappa_nu        = config[config$V1 == "kappa_nu", 2]
 pi_nu           = config[config$V1 == "pi_nu", 2]
 kappa_sigma     = config[config$V1 == "kappa_sigma", 2]
-M               = config[config$V1 == "M", 2] # number of replicates (worlds)
-N               = config[config$V1 == "N", 2]
 m               = config[config$V1 == "m", 2] #OBS GRID MESH SIZE
 sqrt_R          = config[config$V1 == "sqrt_R", 2]
-lclz_mult       = config[config$V1 == "lclz_mult", 2]
-inflation       = config[config$V1 == "inflation", 2]
-seed            = config[config$V1 == "seed", 2]
+N               = config[config$V1 == "N", 2]
 perform_kf_ekf  = config[config$V1 == "perform_kf_ekf", 2]
-KF_SaveClim     = config[config$V1 == "KF_SaveClim", 2]
-perform_HBF     = config[config$V1 == "perform_HBF", 2]
-HBF_SelfClim    = config[config$V1 == "HBF_SelfClim", 2]
+perform_HHBEF     = config[config$V1 == "perform_HHBEF", 2]
 w_cvr           = config[config$V1 == "w_cvr", 2]
 w_evp10         = config[config$V1 == "w_evp10", 2]
+lclz_mult       = config[config$V1 == "lclz_mult", 2]
+inflation       = config[config$V1 == "inflation", 2]
+spa_shift_mx_S  = config[config$V1 == "spa_shift_mx_S", 2]
+KF_SaveClim     = config[config$V1 == "KF_SaveClim", 2]
+HHBEF_SelfClim    = config[config$V1 == "HHBEF_SelfClim", 2]
 F_Lorenz        = config[config$V1 == "F_Lorenz", 2]
 J_Lorenz        = config[config$V1 == "J_Lorenz", 2]        
 sd_noise_Lorenz = config[config$V1 == "sd_noise_Lorenz", 2]
 model_type      = config[config$V1 == "model_type", 2]
+M               = config[config$V1 == "M", 2] # number of replicates (worlds)
 
 # seeds
 
@@ -119,7 +121,7 @@ if(perform_kf_ekf == 1) {
 # mode=1: predicted BBx (fieds' Covariances), 
 # mode=2: predicted BB_KF (KF's background-error Covariances),
 # mode=3: worlds-averaged Fields' Covariances 
-# mode=4: worlds-averaged HBF's   Covariances 
+# mode=4: worlds-averaged HHBEF's   Covariances 
 
 # By default and with mode=0: 
 # switch off time-specific Bx & B_flt computations (both recurrent and by worlds-averaging)
@@ -129,7 +131,7 @@ if(mode == 0) {
   predict_BB_KF = FALSE
   worlds           = FALSE
   worldsAve_BBx    = FALSE
-  worldsAve_BB_HBF = FALSE
+  worldsAve_BB_HHBEF = FALSE
 }
 
 # mode>0: ensure that ntime is small
@@ -146,10 +148,10 @@ if(mode == 1){          # estm CVM of x by Predicting them
   predict_BB_KF = FALSE
   worlds           = FALSE
   worldsAve_BBx    = FALSE
-  worldsAve_BB_HBF = FALSE
+  worldsAve_BB_HHBEF = FALSE
   
   perform_kf_ekf=-1
-  perform_HBF=-1
+  perform_HHBEF=-1
 }
 
 # mode=2: predict BB_KF
@@ -160,10 +162,10 @@ if(mode == 2){          # estm CVM of KF' background errors by Predicting them
   predict_BB_KF = TRUE
   worlds           = FALSE
   worldsAve_BBx    = FALSE
-  worldsAve_BB_HBF = FALSE
+  worldsAve_BB_HHBEF = FALSE
   
   perform_kf_ekf=1
-  perform_HBF=-1
+  perform_HHBEF=-1
   
 }
 
@@ -174,23 +176,23 @@ if(mode == 3 & M > 1){ # estm BBx_worldsAve (by averaging over worlds)
   predict_BB_KF = FALSE
   worlds           = TRUE
   worldsAve_BBx    = TRUE
-  worldsAve_BB_HBF = FALSE
+  worldsAve_BB_HHBEF = FALSE
   
   perform_kf_ekf=-1
-  perform_HBF=-1
+  perform_HHBEF=-1
 }
 
-# mode=4: estm BB_HBF by worlds-averaging
+# mode=4: estm BB_HHBEF by worlds-averaging
 
-if(mode == 4 & M > 1){ # estm BB_HBF_worldsAve (by averaging over worlds)
+if(mode == 4 & M > 1){ # estm BB_HHBEF_worldsAve (by averaging over worlds)
   predict_BBx   = FALSE
   predict_BB_KF = FALSE
   worlds           = TRUE
   worldsAve_BBx    = FALSE
-  worldsAve_BB_HBF = TRUE
+  worldsAve_BB_HHBEF = TRUE
   
   perform_kf_ekf=-1
-  perform_HBF=1
+  perform_HHBEF=1
 }
 
 #------------------------------------------------------
@@ -207,6 +209,7 @@ dt=dt_h *3600 # s
 dt_model = dt
 dt_filter = dt * stride
 
+spa_shift_mx_Bf = 0 # appeared to be not much useful
 
 #------------------------------------------------------
 # calculated basic parameters
@@ -218,17 +221,17 @@ L         = L_mult*delta_s   # mean spatial len scale of x, m
 L_perturb = L*L_perturb_mult # spatial len scale of the scnd flds, m
 T         = L / V_char       # mean time scale for x, s
 
-ExtClim   = -HBF_SelfClim    # +-1; B_clim is taken from a KF run: short (-1) or long (+1)
+ExtClim   = -HHBEF_SelfClim    # +-1; B_clim is taken from a KF run: short (-1) or long (+1)
 # NB: SelfClim for time_filter=10,000 seems to be almost as good as a 100,000 B_clim.
 
 #------------------------------------------------------
 # Derived-type variables containing external parameters
 # 
-# NB: U_i      is the same for all tertiary==pre-secondary fields and the unperturbed model.
-#     V_char_i is the same for all tertiary==pre-secondary fields and the unperturbed model.
+# NB: U_i      is the same for all pre-secondary fields and the unperturbed model.
+#     V_char_i is the same for all pre-secondary fields and the unperturbed model.
 #     
-# 1) Tertiary fields.
-# Each tertiary==pre-secondary field theta_i (i=1,2,3,4) is characterized by the four External Parameters:
+# 1) Tertiary==pre-secondary==pre-transform fields  (stationary)
+# Each tertiary field theta_i (i=1,2,3,4) is characterized by the four External Parameters:
 # (U_i, L_i, V_char_i, SD_i),
 # which are to be converted to the four Model Parameters:
 #  (U_i, rho_i, nu_i, sigma_i)
@@ -254,7 +257,7 @@ tert3_extpar = list(U=U_mean, L=L_perturb, V_char=V_char, SD=sd_tert3)
 sd_tert4=log(kappa_sigma)
 tert4_extpar = list(U=U_mean, L=L_perturb, V_char=V_char, SD=sd_tert4)
 
-# 2) unperturbed model for x
+# 2) unperturbed model for x (stationary)
 
 x_unpert_extpar = list(U=U_mean, L=L, V_char=V_char, SD=sd_x)
 
@@ -290,36 +293,40 @@ parameters = list()
 
 parameters$mode                 <- mode
 parameters$n                    <- n
+parameters$seed                 <- seed
 parameters$stride               <- stride 
 parameters$time_filter          <- time_filter
 parameters$dt_filter            <- dt_filter  # filter time step, s
 parameters$U_mean               <- U_mean
 parameters$V_char               <- V_char
+parameters$L_mean               <- L
+parameters$L_perturb            <- L_perturb
 parameters$sd_x                 <- sd_x
+parameters$sd_U                 <- sd_U
 parameters$kappa_rho            <- kappa_rho
 parameters$pi_rho               <- pi_rho
 parameters$kappa_nu             <- kappa_nu
 parameters$pi_nu                <- pi_nu
-parameters$sd_U                 <- sd_U
-parameters$sqrt_R               <- sqrt_R
-parameters$L_loc                <- L_loc
 parameters$kappa_sigma          <- kappa_sigma
-parameters$M                    <- M
 parameters$mesh_obs             <- m
-parameters$L_mean               <- L
-parameters$L_perturb            <- L_perturb
+parameters$sqrt_R               <- sqrt_R
+
+nparam_not_HHBEF_specific = 19
+
 parameters$N                    <- N
+parameters$L_loc                <- L_loc
 parameters$inflation            <- inflation 
-parameters$seed                 <- seed
+parameters$spa_shift_mx_S       <- spa_shift_mx_S
 parameters$perform_kf_ekf       <- perform_kf_ekf
 parameters$KF_SaveClim          <- KF_SaveClim
-parameters$perform_HBF          <- perform_HBF
-parameters$HBF_SelfClim         <- HBF_SelfClim
+parameters$perform_HHBEF          <- perform_HHBEF
+parameters$HHBEF_SelfClim         <- HHBEF_SelfClim
 parameters$w_cvr                <- w_cvr  
 parameters$w_evp10              <- w_evp10
 parameters$F_Lorenz             <- F_Lorenz
 parameters$J_Lorenz             <- J_Lorenz
 parameters$model_type           <- model_type
+parameters$M                    <- M
 
 # Store the Parameters in the output "filter" variable
 
@@ -333,8 +340,8 @@ set.seed(seed_for_secondary_fields)
 # Technique: generate TERTIARY fields and (point-wise) transform them to the SECONDARY fields.
 # NB: Only ONE realization of each scnd field is generated: N_scnd=1
 
-if(model_type == "DSADM"){
-  
+if( model_type == "DSADM" ){ 
+ 
   message("Generate SECONDARY fields")
   
   N_scnd=1
@@ -409,6 +416,10 @@ if(model_type == "DSADM"){
   }else{
     ssigma = matrix(x_unpert_modpar$sigma, nrow = n, ncol = time_model)
   }
+  
+  # store current parameters$... to be compared with in a follow-up run
+  # (to save time when running the model in the same model setup)
+
 }
 
 #------------------------------------------------------
@@ -604,7 +615,6 @@ OBS = X_true_mdl_steps[ind_obs_space,] + OBS_NOISE
 # One-world KF/EKF
 
 
-
 if(perform_kf_ekf > 0){
   
   message("Run KF")
@@ -619,6 +629,11 @@ if(perform_kf_ekf > 0){
                       X_flt_start, A_start, 
                       model_type, filter_type,
                       predict_BB_KF)
+  
+  # store some config params with which the KF was run 
+  # (so that its RMSE can be compared with that of HHBEF below)
+  
+  parameters_KF=parameters
   
   image2D(KF_res$XXf[,1:min(200, time_filter)], main="XXf")
   image2D(KF_res$XXa[,1:min(200, time_filter)], main="XXa")
@@ -657,7 +672,7 @@ if(perform_kf_ekf > 0){
   if(KF_SaveClim > 0){
     B_clim_long = KF_res$B_mean
     B_clim_and_params = list(B_clim_long=B_clim_long,
-                             parameters=parameters)
+                              parameters=parameters)
     filename=paste0("B_clim_", seed, "_tenKappa", kappa_rho*10, 
                     "_tenLpert_mult", L_perturb_mult*10, ".RData")
     save(B_clim_and_params, file=filename)
@@ -668,12 +683,12 @@ if(perform_kf_ekf > 0){
 }
 
 #-----------------------------------------------
-# One-world HBF (Generalized HBEF, which includes EnKF, HBEF, Var, and EnVar as special cases)
+# One-world HHBEF (Generalized HBEF, which includes EnKF, HBEF, Var, and EnVar as special cases)
 
 
-if(perform_HBF == 1){
+if(perform_HHBEF == 1){
 
-  message("Run HBF")
+  message("Run HHBEF")
   
   set.seed(seed_for_filters)
   
@@ -681,9 +696,9 @@ if(perform_HBF == 1){
   
   # select B_clim
   
-  if(HBF_SelfClim > 0){
+  if(HHBEF_SelfClim > 0){
     
-    B_clim = KF_res$B_mean  # KF'c CVM from the current run
+    B_clim = KF_res$B_mean  # KF's CVM from the current run
     
   }else{
     
@@ -696,7 +711,7 @@ if(perform_HBF == 1){
   
   # Lclz
   
-  L_loc  = lclz_mult*L                # lclz radius, m
+  L_loc  = lclz_mult*L                # lclz radius (Gaspari-Cohn's "c"), m
   C_lclz = lclz_matrix(n, L_loc, Rem) # lclz mx
   
   # Initial conditions
@@ -711,27 +726,27 @@ if(perform_HBF == 1){
   dXae_start = sqrt_A_start %*% N01    # perturbations yet
   Xae_start = X_flt_start + dXae_start # ensm members
   
-  HBF_res = HBF(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem, 
+  HHBEF_res = HHBEF(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem, 
                 UU, rrho, nnu, ssigma,  
                 F_Lorenz, J_Lorenz, sd_noise,
                 R_diag, m, OBS, 
                 X_flt_start, Ba_start, Xae_start, B_clim,
                 N, w_cvr, w_evp10, 
-                C_lclz, inflation,
+                inflation, spa_shift_mx_Bf, spa_shift_mx_S, C_lclz,
                 model_type)
 
-  HBF_one_world = HBF_res
+  HHBEF_one_world = HHBEF_res
   
-  filter$HBF_one_world = HBF_one_world
+  filter$HHBEF_one_world = HHBEF_one_world
   
-  HBF_fRMSE  = rmse(HBF_res$XXf[,], X_true[,])
-  HBF_fRMSE
+  HHBEF_fRMSE  = rmse(HHBEF_res$XXf[,], X_true[,])
+  HHBEF_fRMSE
   
-  HBF_RMSE_assumed = sqrt( mean( diag( HBF_res$B_mean ) ) )
-  HBF_RMSE_assumed
+  HHBEF_RMSE_assumed = sqrt( mean( diag( HHBEF_res$B_mean ) ) )
+  HHBEF_RMSE_assumed
   
-  HBF_aRMSE  = rmse(HBF_res$XXa[,], X_true[,]) 
-  HBF_aRMSE
+  HHBEF_aRMSE  = rmse(HHBEF_res$XXa[,], X_true[,]) 
+  HHBEF_aRMSE
 
 }
 
@@ -743,7 +758,7 @@ if(worlds){
   message("Run worlds")
   
   X     = list()
-  X_HBF = list()
+  X_HHBEF = list()
   
   set.seed(seed_for_filters)
   
@@ -762,9 +777,9 @@ if(worlds){
     #save(X_true, file = paste0(path,'/DATA/truth_',iter, '.Rdata'))
     
     #-----------
-    # HBF filtering
+    # HHBEF filtering
     
-    if(perform_HBF == 1){
+    if(perform_HHBEF == 1){
       
       # gen OBS
       OBS_NOISE = matrix(rnorm((n%/%m+min(1,n%%m))*time_model, mean=0, sd=sqrt_R),
@@ -786,7 +801,7 @@ if(worlds){
       Xae_start   = X_flt_start + dXae_start # ensm members
       
       
-      HBF_res = HBF(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem, 
+      HHBEF_res = HHBEF(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem, 
                     UU, rrho, nnu, ssigma,  
                     F_Lorenz, J_Lorenz, sd_noise,
                     R_diag, m, OBS, 
@@ -795,11 +810,11 @@ if(worlds){
                     C_lclz, inflation,
                     model_type)
       
-      #save(HBF_res, file = paste0(path,'/DATA/HBF_',iter, '.Rdata'))
+      #save(HHBEF_res, file = paste0(path,'/DATA/HHBEF_',iter, '.Rdata'))
       
-      X_HBF[[iter]] = HBF_res$XXf  # only anls steps
+      X_HHBEF[[iter]] = HHBEF_res$XXf  # only anls steps
       
-    } # end if_HBF
+    } # end if_HHBEF
   } # end loop_iter
   
 } # end if_worlds
@@ -839,31 +854,31 @@ if(worldsAve_BBx){
 }
 
 #-----------------------------------------------
-# Estm BB_HBF by averaging over the worlds
+# Estm BB_HHBEF by averaging over the worlds
 
-if(worldsAve_BB_HBF){
+if(worldsAve_BB_HHBEF){
   
-  message('HBF: background-error (sample covariance) matrix S and one-world flt stats')
+  message('HHBEF: background-error (sample covariance) matrix S and one-world flt stats')
 
-  BB_HBF_worldsAve = array(0, dim = c(n, n, time_filter))
+  BB_HHBEF_worldsAve = array(0, dim = c(n, n, time_filter))
   
   for(iter in 1:M){
     #load(paste0(path,'/DATA/truth_',iter,'.Rdata'))  
-    #load(paste0(path,'/DATA/HBF_',iter,'.Rdata'))  
+    #load(paste0(path,'/DATA/HHBEF_',iter,'.Rdata'))  
     
     X_true = X[[iter]] 
-    Xf_HBF = X_HBF[[iter]]
+    Xf_HHBEF = X_HHBEF[[iter]]
     
     for(i in 1:time_filter){
-      BB_HBF_worldsAve[,,i] = BB_HBF_worldsAve[,,i] + 
-        ((Xf_HBF[,i] - X_true[,i])) %*% t(Xf_HBF[,i] - X_true[,i])
+      BB_HHBEF_worldsAve[,,i] = BB_HHBEF_worldsAve[,,i] + 
+        ((Xf_HHBEF[,i] - X_true[,i])) %*% t(Xf_HHBEF[,i] - X_true[,i])
     }
     cat("\r",paste0(round(iter/M*100,0),'%'))
   }
   
-  BB_HBF_worldsAve = BB_HBF_worldsAve / M
+  BB_HHBEF_worldsAve = BB_HHBEF_worldsAve / M
   
-  filter$BB_HBF_worldsAve = BB_HBF_worldsAve
+  filter$BB_HHBEF_worldsAve = BB_HHBEF_worldsAve
 } 
 
 #-----------------------------------------------
@@ -924,31 +939,41 @@ if(perform_kf_ekf > 0){
 
 cat("\n")
 
-if(perform_HBF > 0){
+if(perform_HHBEF > 0){
   
   cat("TRUTH_RMSE=")
   print(TRUTH_RMSE)
   
   cat("\n")
   
-  cat("HBF_fRMSE=")
-  print(HBF_fRMSE)
+  cat("HHBEF_fRMSE=")
+  print(HHBEF_fRMSE)
   
   cat("\n")
   
-  cat("HBF_RMSE_assumed=")
-  print(HBF_RMSE_assumed)
+  cat("HHBEF_RMSE_assumed=")
+  print(HHBEF_RMSE_assumed)
   
   cat("\n")
   
-  cat("HBF_aRMSE=")
-  print(HBF_aRMSE)
+  cat("HHBEF_aRMSE=")
+  print(HHBEF_aRMSE)
 
   cat("\n")
   
-  cat("(HBF_fRMSE - KF_fRMSE) / KF_fRMSE, %:")
-  print(100*(HBF_fRMSE - KF_fRMSE) / KF_fRMSE)
-  
+  same_parameters = all(parameters[1:nparam_not_HHBEF_specific]    %in% 
+                                           parameters_KF[1:nparam_not_HHBEF_specific]) & 
+                    all(parameters_KF[1:nparam_not_HHBEF_specific] %in% 
+                                           parameters[1:nparam_not_HHBEF_specific])
+    
+  if(same_parameters){
+    cat("(HHBEF_fRMSE - KF_fRMSE) / KF_fRMSE, %:")
+    print(100*(HHBEF_fRMSE - KF_fRMSE) / KF_fRMSE)
+  }else{
+    message("Rerun KF for this parameter set!")
+    message("Rerun KF for this parameter set!")
+    message("Rerun KF for this parameter set!")
+  }
   
 }
 
