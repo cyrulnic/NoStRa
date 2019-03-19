@@ -186,6 +186,11 @@ for (t in (1:ntime)){
 Lambda=macroscale_st_km
 lambda=microscale_st_km
 
+# Spatially averaged fields
+
+V_spaAve = apply(V, 2, mean)
+Lambda_spaAve = apply(Lambda, 2, mean)
+
 #------------------------------------------------
 # Plots: theta, xi, V, Lambda, lambda
 
@@ -201,46 +206,50 @@ for(it in 1:nt){
   
   if(theta_name == "all"){
     
-    pngname=paste0(field, "_rho_",t1,".png")
-    png(pngname, width=5.1, height=5.1, units = "in", res=300)
+    namefile=paste0(field, "_rho_",t1,".pdf")
+    #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+    pdf(namefile, width=7, height=7)
     par(mai=c(1.2,1.2,0.7,0.7))
     image2D(rho[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
             main=bquote("Secondary field"~rho), 
-            cex.main=1.7, cex.axis=1.3, cex.lab=1.6)
+            cex.main=1.7, cex.axis=1.5, cex.lab=1.7,)
     dev.off()
     
-    pngname=paste0(field, "_nu_",t1,".png")
-    png(pngname, width=5.1, height=5.1, units = "in", res=300)
+    namefile=paste0(field, "_nu_",t1,".pdf")
+    #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+    pdf(namefile, width=7, height=7)
     par(mai=c(1.2,1.2,0.7,0.7))
     image2D(nu[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
             main=bquote("Secondary field"~nu),
-            cex.main=1.7, cex.axis=1.3, cex.lab=1.6) 
+            cex.main=1.7, cex.axis=1.5, cex.lab=1.7,) 
     dev.off()
     
-    pngname=paste0(field, "_sigma_",t1,".png")
-    png(pngname, width=5.1, height=5.1, units = "in", res=300)
+    namefile=paste0(field, "_sigma_",t1,".pdf")
+    #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+    pdf(namefile, width=7, height=7)
     par(mai=c(1.2,1.2,0.7,0.7))
     image2D(sigma[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
             main=bquote("Secondary field"~sigma),
-            cex.main=1.7, cex.axis=1.3, cex.lab=1.6) 
+            cex.main=1.7, cex.axis=1.5, cex.lab=1.7,) 
     dev.off()
     
-    pngname=paste0(field, "_U_",t1,".png")
-    png(pngname, width=5.1, height=5.1, units = "in", res=300)
+    namefile=paste0(field, "_U_",t1,".pdf")
+    #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+    pdf(namefile, width=7, height=7)
     par(mai=c(1.2,1.2,0.7,0.7))
     image2D(U[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
             main=bquote("Secondary field"~U),
-            cex.main=1.7, cex.axis=1.3, cex.lab=1.6) 
+            cex.main=1.7, cex.axis=1.5, cex.lab=1.7,) 
     dev.off()
     
   }else{
     
-    #pngname=paste0(field, theta_name,"_",t1,".png")
-    #png(pngname, width=5.1, height=5.1, units = "in", res=300)
+    #namefile=paste0(field, theta_name,"_",t1,".png")
+    #png(namefile, width=5.1, height=5.1, units = "in", res=300)
     #par(mai=c(1.2,1.2,0.7,0.7))
     #image2D(theta[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
     #        main=paste(theta_name), 
-    #        cex.main=1.7, cex.axis=1.3, cex.lab=1.6) 
+    #        cex.main=1.7, cex.axis=1.5, cex.lab=1.7,) 
     #dev.off()
     
   }
@@ -251,40 +260,66 @@ for(it in 1:nt){
     fieldtitle="Non-stationary field "
   }
   
-  pngname=paste0(field, "_xi_",t1,".png")
-  png(pngname, width=5.1, height=5.1, units = "in", res=300)
+  namefile=paste0(field, "_xi_",t1,".pdf")
+  #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+  pdf(namefile, width=7, height=7)
   par(mai=c(1.2,1.2,0.7,0.7))
   image2D(xi[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
-          main=bquote(fieldtitle, xi),
+          main=fieldtitle,
           #main="Non-stationary field",
-          cex.main=1.7, cex.axis=1.3, cex.lab=1.6)
+          cex.main=1.7, cex.axis=1.5, cex.lab=1.7,)
   dev.off()
   
   
-  pngname=paste0(field, "_V_",t1,".png")
-  png(pngname, width=5.1, height=5.1, units = "in", res=300)
+  namefile=paste0(field, "_V_",t1,".pdf")
+  #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+  pdf(namefile, width=7, height=7)
   par(mai=c(1.2,1.2,0.7,0.7))
   image2D(log10(V[,tt]), x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
           main=bquote(log[10]~"(Var"~xi~")"), 
-          cex.main=1.7, cex.axis=1.3, cex.lab=1.6)
+          cex.main=1.7, cex.axis=1.5, cex.lab=1.7,)
   dev.off()
   
   
-  pngname=paste0(field, "_Lambda_",t1,".png")
-  png(pngname, width=5.1, height=5.1, units = "in", res=300)
+  namefile=paste0(field, "_Lambda_",t1,".pdf")
+  #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+  pdf(namefile, width=7, height=7)
   par(mai=c(1.2,1.2,0.7,0.7))
   image2D(Lambda[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
           main=as.expression( bquote(Lambda) ), 
-          cex.main=1.7, cex.axis=1.3, cex.lab=1.6)
+          cex.main=1.7, cex.axis=1.5, cex.lab=1.7,)
+  dev.off()
+  
+  # spa Ave plots
+  
+  namefile=paste0(field, "_V_SpaAve",t1,".pdf")
+  #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+  pdf(namefile, width=7, height=7)
+  par(mai=c(1.2,1.2,0.7,0.7))
+  plot(log10(V_spaAve[tt]),  xlab="Time, h",
+          main=bquote(log[10]~"(Var_spaAve"~xi~")"), 
+          cex.main=1.7, cex.axis=1.5, cex.lab=1.7,)
   dev.off()
   
   
-  #pngname=paste0("Lambda_mic_",t1,".png")
-  #png(pngname, width=5.1, height=5.1, units = "in", res=300)
+  namefile=paste0(field, "_Lambda_SpaAve",t1,".pdf")
+  #png(namefile, width=5.1, height=5.1, units = "in", res=300)
+  pdf(namefile, width=7, height=7)
+  par(mai=c(1.2,1.2,0.7,0.7))
+  plot(Lambda_spaAve[tt], xlab="Time, h",
+          main=bquote("(Lambda_spaAve)"), 
+          cex.main=1.7, cex.axis=1.5, cex.lab=1.7,)
+  dev.off()
+  
+  
+  
+  
+  #namefile=paste0("Lambda_mic_",t1,".png")
+  #png(namefile, width=5.1, height=5.1, units = "in", res=300)
   #par(mai=c(1.2,1.2,0.7,0.7))
   #image2D(lambda[,tt], x=grid_km, y=tgrid_h[tt], xlab="Space, km", ylab="Time, h",
   #        main=paste("lambda"), 
-  #        cex.main=1.7, cex.axis=1.3, cex.lab=1.6)
+  #        cex.main=1.7, cex.axis=1.5, cex.lab=1.7,)
   #dev.off()
   
 }
@@ -317,14 +352,15 @@ if(SpaCrl_plots){
     row=CRM[i,,t]
     srow=symm_cvm_row(row, n, i)
     
-    pngname=paste0(field, "_SpaCrl_t",iplot,".png")
-    png(pngname, width=7.1, height=5.1, units = "in", res=300)
+    namefile=paste0(field, "_SpaCrl_t",iplot,".pdf")
+    #png(namefile, width=7.1, height=5.1, units = "in", res=300)
+    pdf(namefile, width=7, height=5)
     par(mai=c(1.2,1.2,0.7,0.7))
     plot(grid_km[]-grid_km[j_center], srow, 
          xlab="Distance, km", ylab="Correlation", 
          type="l", ylim=c(mn,mx), 
-         cex.main=1.7, cex.axis=1.3, cex.lab=1.6,
-         main=paste("Spatial fcst-err correl") )
+         cex.main=1.7, cex.axis=1.5, cex.lab=1.7,,
+         main=paste("Spatial forecast-error correlation") )
     
     for(icurve in 2:ncurve){
       i=ii[icurve]
@@ -554,33 +590,37 @@ print(Lambda_decile_ratio)
 
 cat("\n")
 
-cat("crl_Lambda_V=")
-print(crl_Lambda_V)
+if(!stationarity){
+  cat("crl_Lambda_V=")
+  print(crl_Lambda_V)
+  
+  cat("crl_rho_V=")
+  print(crl_rho_V)
+  
+  cat("crl_nu_V=")
+  print(crl_nu_V)
+  
+  cat("crl_sigma_V=")
+  print(crl_sigma_V)
+  
+  cat("crl_LL_Lambda=")
+  print(crl_LL_Lambda)
+  
+  cat("crl_ll_lambda=")
+  print(crl_ll_lambda)
+  
+  cat("crl_VV_V=")
+  print(crl_VV_V)
+  
+}
 
-cat("crl_rho_V=")
-print(crl_rho_V)
-
-cat("crl_nu_V=")
-print(crl_nu_V)
-
-cat("crl_sigma_V=")
-print(crl_sigma_V)
-
-cat("crl_LL_Lambda=")
-print(crl_LL_Lambda)
-
-cat("crl_ll_lambda=")
-print(crl_ll_lambda)
-
-cat("crl_VV_V=")
-print(crl_VV_V)
-
-cat("Time shifted: crl_VV_V_max=")
-print(crl_VV_V_max)
-
-cat("Time shifted: crl_LL_Lambda_max=")
-print(crl_LL_Lambda_max)
-
+if(SHIFT){
+  cat("Time shifted: crl_VV_V_max=")
+  print(crl_VV_V_max)
+  
+  cat("Time shifted: crl_LL_Lambda_max=")
+  print(crl_LL_Lambda_max)
+}
 
 cat("micro_d_macro_scale_mean=")
 print(micro_d_macro_scale_mean)
