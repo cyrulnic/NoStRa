@@ -1,33 +1,34 @@
-mode;0            # 0:single mdl&flt runs, 1:predict BBx, 2:predict BB_KF, 3:worlds-ave BBx, 4:worlds-ave BB_HBF
-n;60              # spatial grid size, unitless
+mode;0            # 0:single mdl&flt runs, 1:predict BBx, 2:predict BB_KF, 3:worlds-ave BBx, 4:worlds-ave BB_HHBEF
+n;60              # spatial grid size (number of points), unitless
+seed;119123       # random seed, determines all seeds
 stride;2          # nu of model time steps between consecutive analyses (DSADSM: 2)
 time_filter;5000  # number of analyses to be computed (10000 nrm, 100000 to generate B_clim)
 dt_h;6            # mdl time step, "atm time"(h) DSADM: =6; Lor05: =3(J>1), =2(J=1), =1(J=0), =1.5(F64)
 U_mean;10         # 10  (mean flow velocity for both tert and unperturbed models, m/s)
-V_char;3          # 1-10   (characteristic velocity, m/s, defines the mean time scale, all flds)
+V_char;3          # 1-10   (characteristic velocity, m/s, defines the mean time scale, all flds), 3 nrm
 L_mult;5          # L=L_mult*mesh, 5 (defines the mean spatial length scale)
-L_perturb_mult;2  # L_perturb=L_perturb_mult *L (1--3) spatial len scale for tertiary fields
-sd_x;5            # 5   (SD(x_truth))  
-sd_U;10           # 0--40  (SD(U_perturb))        
-kappa_rho;3       # 1--8    (multiplicative spread of rho)
-pi_rho;0.02       # 0--0.1  (Pr(negative rho))
-kappa_nu;3        # 1--8    (multiplicative spread of nu)
+L_perturb_mult;2  # L_perturb=L_perturb_mult *L (1--3) spatial len scale for tertiary fields, 2 nrm
+sd_x;5            # 5   (SD(x_truth)), 5 nrm  
+sd_U;10           # 0--40  (SD(U_perturb)), 0 for stationarity        
+kappa_rho;3       # 1--8    (multiplicative spread of rho), 1 for stationarity
+pi_rho;0.02      # 0--0.1  (Pr(negative rho))
+kappa_nu;3        # 1--8    (multiplicative spread of nu), 1 for stationarity
 pi_nu;0.01        # 0--0.05 (Pr(negative nu))
-kappa_sigma;3     # 1--8    (multiplicative spread of sigma)
-M;1               # number of worlds: nrm 1, with mode=2: 5000
-N;10              # ensm size: 10,20,30,40,...
+kappa_sigma;3     # 1--8    (multiplicative spread of sigma), 1 for stationarity
 m;10              # number of spatial grid meshes betw obs: DSADM:6, Lor(J>0):3, Lor(J=0)=2
 sqrt_R;6          # DSADM:4, Lorenz:2 (obs-err st.dev.)
-lclz_mult;1.5     # L_loc=localization_mult *L, 1--1.5
-inflation;1.03    # inflate ensm perturbations: 1.03--1.1
-seed;119123       # random seed, determines all seeds
+N;80              # ensm size: 10,20,30,40,...
 perform_kf_ekf;-1 # +1 for KF, +2 for EKF, -1 for none
-KF_SaveClim;-1    # +1: save KF's time mean CVM (used as B_clim in HBF), -1: don't save
-perform_HBF;1     # +1 or -1
-HBF_SelfClim;-1   # +1: HBF uses B_clim from the current KF run; -1: from external KF's long-run-mean CVM
-w_cvr;0.1         # HBF's prior B:   weight of Clim Vs Recent,         \in [0,1]
-w_evp10;0.2       # HBF'posterior B: weight of Ensm Vs Prior for N=10, \in [0,1]
+perform_HHBEF;1   # +1 or -1
+w_cvr;1.0         # HHBEF's prior B:   weight of Clim Vs Recent,         \in [0,1]
+w_evp10;0.1      # HHBEF'posterior B: weight of Ensm Vs Prior for N=10, \in [0,1]
+lclz_mult;2.0     # L_loc=localization_mult *L, 1--1.5
+inflation;1.02    # inflate ensm perturbations: 1.03--1.1
+spa_shift_mx_S;0 # spatial averaging of ensm-CVM S, max shift in one direction (=0 if no ave)
+KF_SaveClim;-1    # +1: save KF's time mean CVM (used as B_clim in HHBEF), -1: don't save
+HHBEF_SelfClim;-1 # +1: HHBEF uses B_clim from the current KF run; -1: from external KF's long-run-mean CVM
 F_Lorenz;32                       # >5, 32 nrm
 J_Lorenz;2                        # K_Lorenz=2*J_Lorenz +1, J_Lorenz=1,...5 
 sd_noise_Lorenz;1e-5              # per 6h atm time, for 2pi/60 mesh size (0.01)
 model_type;1                      # Fcst Mdl: 1:DSADM, 2:Lorenz05, 3:linearized Lorenz05
+M;1                               # number of worlds: nrm 1, with mode=2: 5000
