@@ -1,15 +1,19 @@
 
-HBF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem, 
+HHBEF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem, 
                 UU, rrho, nnu, ssigma,  
                 F_Lorenz, J_Lorenz, sd_noise,
                 R_diag, m, OBS, 
                 X_flt_start, Ba_start, Xae_start, B_clim,
                 N, w_cvr, w_evp10, 
-                C_lclz, inflation,
+                inflation, spa_shift_max_Bf, spa_shift_max_S, C_lclz,
                 model_type){
   #-----------------------------------------------------------------------------------
-  # HBF: a Generalized HBEF, which includes EnKF, Var, EnVar, and HBEF as special cases.
-  # As compared to the HBEF, in the HBF:
+  # HHBEF: a Generalized HBEF, which includes EnKF, Var, EnVar, HBEF as special cases
+  # and blends sample cvm with any or all of
+  # (i) B_clim
+  # (ii) time-smoothed covs
+  # (iii) space-smoothed covs
+  # As compared to the HBEF, in the HHBEF:
   # 
   # 1) The scnd filter treats B rather than P and Q separately,
   # 2) The fcst step of the scnd filter involves a "regression to the mean"
@@ -68,12 +72,15 @@ HBF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem,
   # N - ensm size
   # w_cvr - in computing the prior Bf(t): the relative weight of the static "Climatological" CVM 
   #         vs the evolved Recent past CVM Ba(t-1), see Eq(1) above
-  # w_evp10 - relative weight of the (localized) Ensemble sample CVM S vs the Prior Bf,
+  # w_evp10 - relative weight of the (localized) Ensemble sample CVM S vs the Prior Bf ("ensm-vs-prior"),
   #           see Eq(2) above 
-  # C_lclz - localization matrix (m) 
   # inflation - covariance inflation coeficient 
   #       (defined as the multiplier of the fcts-ensm perturbations, i.e.
   #       the covariances are effectively multiplied by inflation^2)
+  # spa_shift_max_Bf, spa_shift_max_S - number of spatial shifts to be made in one of the 
+  #          two directionsin order to spatially smooth the cvm (Bf and S, resp.)
+  #          with an even triangular weighting function
+  # C_lclz - localization matrix 
   # model_type = "DSADM" or "Lorenz05" or "Lorenz05lin"
   # 
   # return: arrays at the anls times only.
@@ -81,7 +88,7 @@ HBF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem,
   # M Tsyrulnikov (current code owner),
   # A Rakitko
   # 
-  # July 2018
+  # Mar 2019
   #-----------------------------------------------------------------------------------
   
   ntime_model = ntime_filter * stride  # nu of filter (anls) time steps
@@ -90,7 +97,7 @@ HBF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem,
   
   if(model_type != "DSADM"){ # & model_type != "Lorenz05" & model_type != "Lorenz05lin"){
     print(model_type)  
-    stop("HBF: wrong model_type")
+    stop("HHBEF: wrong model_type")
   }
   
   #---------------------------------------------------
@@ -127,7 +134,14 @@ HBF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem,
   #---------------------------------------------------
   # The main loop over MODEL time steps
   
+  ntm10 =floor(ntime_model /10)
+  ntm100=floor(ntime_model /100)
+  
   for(i in (1:ntime_model)){
+    
+    if(i %% ntm10 == 0){
+      message(i / ntm100)
+    }
     
     #-------------------------
     # (1) Fcst
@@ -141,9 +155,9 @@ HBF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem,
     Xfe = dsadm_step(Xae, n, N, dt, UU[,i], rrho[,i], nnu[,i], ssigma[,i], Rem, forcing = TRUE)
   
     
-    # Separate model time steps when the anls is to be or not to be performed:
-    # ANLS are to be done at    t=stride*k +1,    where k=1,2,3,...
-    # Therefore at the anls times, t-1 should divisible by stride:
+    # Separate model time steps i when the anls is to be or not to be performed:
+    # ANLS are to be done at    i=stride*k +1,    where i=0,1,2,...
+    # Therefore at the anls times, i-1 should divisible by stride:
     
     if(((i-1) %% stride) != 0){  # no anls, continue fcst
       
@@ -158,18 +172,39 @@ HBF <- function(ntime_filter, n, dt, stride, ind_obs_space, ind_time_anls, Rem,
       
       Bf = w_cvr*B_clim + (1-w_cvr)*Ba
       
+      # Spa smoo Bf
+      
+      if(spa_shift_max_Bf > 0){
+        C=Bf
+        spa_shift_max = spa_shift_max_Bf
+        Bf = SpaSmooCVM(n, C, spa_shift_max)
+      }
+      
       #-------------------------
       # (2) Anls
       
-      # (2.0) Localized inflated sample CVM
+      # (2.0.0) Inflation
       
-      dXfe=(Xfe - rep(Xf, N)) * inflation  # inflation
+      dXfe=(Xfe - rep(Xf, N)) * inflation  # inflated fcst-ensm perturbations
       Xfe_inflated = rep(Xf, N) + dXfe
       
-      S=dXfe %*% t(dXfe) /N 
+      # (2.0.1) Sample CVM
+      
+      S=dXfe %*% t(dXfe) /N  # non-shifted sample CVM
+      
+      # (2.0.2) Spa smoo S
+      
+      if(spa_shift_max_S > 0){
+        C=S
+        spa_shift_max = spa_shift_max_S
+        S = SpaSmooCVM(n, C, spa_shift_max)
+      }
+      
+      # (2.0.3) Covariance Localization
+
       S_lclz = S * C_lclz             # localization
       
-      # (2.1) Scnd flt B: anls, compute the Posterior B, i.e. Ba
+      # (2.1) Scnd flt: B: anls, compute the Posterior B, i.e. Ba
       
       Ba = (1-w_evp)*Bf + w_evp*S_lclz
       
