@@ -9,5 +9,6 @@ The repository contains the R code of a doubly stochastic advection-diffusion-de
 The repository also contains the R code of several hybrid ensemble filters (EnKF, EnVar, HBEF by Tsyrulnikov and Rakitko, Physica D, 2017, and the hybrid-HBEF or HHBEF that combines all the above filters) in an environment with the DSADM as the ``model of truth'', and R scripts used to compute the model’s and the filters’ spatio-temporal statistics.
 
 Reference:
-Michael Tsyrulnikov and Alexander Rakitko. Impact of non-stationarity of prior covariances on hybrid ensemble filters: a study with a doubly stochastic advection-diffusion-decay model of truth. To be submitted to Quart. J. Roy. Meteorol. Soc., September 2018.
+Michael Tsyrulnikov and Alexander Rakitko. Impact of non-stationarity on hybrid ensemble filters: A study with a
+   doubly stochastic advection-diffusion-decay model of truth. Revised version to be submitted to Quart. J. Roy. Meteorol. Soc., March 2018.
 
