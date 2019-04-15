@@ -26,23 +26,23 @@ mx=max(max(enkf), max(ec), max(es), max(et), max(hhbef))
 namefile=paste0("RMSE_flt_NstatioStrength_Eplus.pdf")
 pdf(namefile, width=7, height=7)
 par(mgp=c(2.5, 1, 0))
-plot(xx, enkf, type='b',col='black', lwd=3, lty=1, pch=4,
+plot(xx, enkf, type='b',col='black', lwd=3, lty=1, pch=4, cex=1.8,
      xlab="Strength of non-stationarity", 
      xaxp=c(0,3,3),
-     ylab="Relative deterioration wrt KF", ylim=c(mn,mx),
-     cex.main=1.7, cex.axis=1.5, cex.lab=1.7,
-     main=paste("Filters' FG RMSEs relative to KF")
+     ylab="Relative performance score", ylim=c(mn,mx),
+     #main=paste("Filters' FG RMSEs relative to KF"),
+     cex.main=1.7, cex.axis=1.5, cex.lab=1.7
      )
-lines(xx, ec, col="orange", type='b', lwd=3, pch=3)
-lines(xx, es, col="green", type='b', lwd=3, pch=0)
-lines(xx, et, col="purple", type='b', lwd=3, pch=2)
-lines(xx, hhbef, col="blue", type='b', lwd=3, pch=8)
+lines(xx, ec, col="orange", type='b', lwd=3, pch=3, cex=1.8)
+lines(xx, es, col="green", type='b', lwd=3, pch=0, cex=1.8)
+lines(xx, et, col="purple", type='b', lwd=3, pch=2, cex=1.8)
+lines(xx, hhbef, col="blue", type='b', lwd=3, pch=8, cex=1.8)
 
 leg.txt<-c('EnKF','EnKF +C (=EnVar)', 'EnKF +S', 'EnKF +T (=HBEF)', 'HHBEF')
 leg.col<-c("black",  "orange", "green", "purple", "blue")
 legend("topleft", inset=0, leg.txt, col=leg.col, lwd=c(3,3,3,3,3), lty=c(1,1,1,1,1),  
        pch=c(4,3,0,2,8), 
-       pt.lwd=3, cex=1.3, pt.cex=1, bg="white")
+       pt.lwd=3, cex=1.3, pt.cex=1.8, bg="white")
 
 dev.off()
 
@@ -63,22 +63,22 @@ mx=max(max(h),max(h_c), max(h_s), max(h_t))
 namefile=paste0("RMSE_flt_NstatioStrength_Hminus.pdf")
 pdf(namefile, width=7, height=7)
 par(mgp=c(2.5, 1, 0))
-plot(xx, h, type='b',col='blue', lwd=3, lty=1, pch=8,
+plot(xx, h, type='b',col='blue', lwd=3, lty=1, pch=8, cex=1.8,
      xlab="Strength of non-stationarity", 
      xaxp=c(0,3,3),
-     ylab="Relative deterioration wrt KF", ylim=c(mn,mx),
-     cex.main=1.7, cex.axis=1.5, cex.lab=1.7,
-     main=paste("Filters' FG RMSEs relative to KF")
+     ylab="Relative performance score", ylim=c(mn,mx),
+     #main=paste("Filters' FG RMSEs relative to KF"),
+     cex.main=1.7, cex.axis=1.5, cex.lab=1.7
 )
-lines(xx, h_c, col="gold2", type='b', lwd=3, pch=3)
-lines(xx, h_s, col="springgreen3", type='b', lwd=3, pch=0)
-lines(xx, h_t, col="violetred", type='b', lwd=3, pch=2)
+lines(xx, h_c, col="gold2",        type='b', lwd=3, pch=3, cex=1.8)
+lines(xx, h_s, col="springgreen3", type='b', lwd=3, pch=0, cex=1.8)
+lines(xx, h_t, col="violetred",    type='b', lwd=3, pch=2, cex=1.8)
 
 leg.txt<-c('HHBEF','HHBEF -C', 'HHBEF -S', 'HHBEF -T')
 leg.col<-c("blue",  "gold2", "springgreen3",  "violetred")
 legend("topleft", inset=0, leg.txt, col=leg.col, lwd=c(3,3,3,3), lty=c(1,1,1,1),  
        pch=c(8,3,0,2), 
-       pt.lwd=3, cex=1.3, pt.cex=1, bg="white")
+       pt.lwd=3, cex=1.3, pt.cex=1.8, bg="white")
 
 dev.off()
 
@@ -109,23 +109,23 @@ mx=0.045
 namefile=paste0("RMSE_flt_Lperturb_Eplus.pdf")
 pdf(namefile, width=7, height=7)
 par(mgp=c(2.5, 1, 0))
-plot(xx, enkf, type='b',col='black', lwd=3, lty=1, pch=4,
+plot(xx, enkf, type='b',col='black', lwd=3, lty=1, pch=4, cex=1.8,
      xlab="Time scale of nonstationarity", 
      xaxp=c(0,3,3),
-     ylab="Relative deterioration wrt KF", ylim=c(mn,mx),
-     cex.main=1.7, cex.axis=1.5, cex.lab=1.7,
-     main=paste("Filters' FG RMSEs relative to KF")
+     ylab="Relative performance score", ylim=c(mn,mx),
+     #main=paste("Filters' FG RMSEs relative to KF"),
+     cex.main=1.7, cex.axis=1.5, cex.lab=1.7
 )
-lines(xx, ec, col="orange", type='b', lwd=3, pch=3)
-lines(xx, es, col="green", type='b', lwd=3, pch=0)
-lines(xx, et, col="purple", type='b', lwd=3, pch=2)
-lines(xx, hhbef, col="blue", type='b', lwd=3, pch=8)
+lines(xx, ec, col="orange", type='b', lwd=3, pch=3, cex=1.8)
+lines(xx, es, col="green", type='b', lwd=3, pch=0, cex=1.8)
+lines(xx, et, col="purple", type='b', lwd=3, pch=2, cex=1.8)
+lines(xx, hhbef, col="blue", type='b', lwd=3, pch=8, cex=1.8)
 
 leg.txt<-c('EnKF','EnKF +C (=EnVar)', 'EnKF +S', 'EnKF +T (=HBEF)', 'HHBEF')
 leg.col<-c("black",  "orange", "green", "purple", "blue")
 legend("topleft", inset=0, leg.txt, col=leg.col, lwd=c(3,3,3,3,3), lty=c(1,1,1,1,1),  
        pch=c(4,3,0,2,8), 
-       pt.lwd=3, cex=1.3, pt.cex=1, bg="white")
+       pt.lwd=3, cex=1.3, pt.cex=1.8, bg="white")
 
 dev.off()
 
