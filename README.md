@@ -10,4 +10,4 @@ The repository also contains the R code of several hybrid ensemble filters (EnKF
 
 Reference:
 Michael Tsyrulnikov and Alexander Rakitko. Impact of non-stationarity on hybrid ensemble filters: A study with a
-   doubly stochastic advection-diffusion-decay model. Quart. J. Roy. Meteorol. Soc., 2019, published online, doi:10.1002/qj.3556.
+   doubly stochastic advection-diffusion-decay model. Quart. J. Roy. Meteorol. Soc., 2019, v. 145, N 722, 2255-2271, DOI: 10.1002/QJ.3556.
